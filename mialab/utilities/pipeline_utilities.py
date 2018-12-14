@@ -45,6 +45,8 @@ class FeatureImageTypes(enum.Enum):
     T1_GRADIENT_INTENSITY = 3
     T2_INTENSITY = 4
     T2_GRADIENT_INTENSITY = 5
+    T1_HOG = 6
+    T2_HOG = 7
 
 
 class FeatureExtractor:
@@ -58,9 +60,10 @@ class FeatureExtractor:
         """
         self.img = img
         self.training = kwargs.get('training', True)
-        self.coordinates_feature = kwargs.get('coordinates_feature', False)
-        self.intensity_feature = kwargs.get('intensity_feature', False)
-        self.gradient_intensity_feature = kwargs.get('gradient_intensity_feature', False)
+        self.coordinates_feature = kwargs.get('coordinates_feature', True)
+        self.intensity_feature = kwargs.get('intensity_feature', True)
+        self.gradient_intensity_feature = kwargs.get('gradient_intensity_feature', True)
+        self.hog_feature = kwargs.get('hog_feature', True)
 
     def execute(self) -> structure.BrainImage:
         """Extracts features from an image.
@@ -83,6 +86,14 @@ class FeatureExtractor:
                 sitk.GradientMagnitude(self.img.images[structure.BrainImageTypes.T1])
             self.img.feature_images[FeatureImageTypes.T2_GRADIENT_INTENSITY] = \
                 sitk.GradientMagnitude(self.img.images[structure.BrainImageTypes.T2])
+
+        if self.hog_feature:
+            hog_feat_T1 = fltr_feat.HOGFeatureFilter(self.img.images[structure.BrainImageTypes.T1])
+            self.img.feature_images[FeatureImageTypes.T1_HOG] = \
+                hog_feat_T1.execute(self.img.images[structure.BrainImageTypes.T1])
+            hog_feat_T2 = fltr_feat.HOGFeatureFilter(self.img.images[structure.BrainImageTypes.T2])
+            self.img.feature_images[FeatureImageTypes.T2_HOG] = \
+                hog_feat_T2.execute(self.img.images[structure.BrainImageTypes.T2])
 
         self._generate_feature_matrix()
 
